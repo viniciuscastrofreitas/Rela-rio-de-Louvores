@@ -6,10 +6,23 @@ import App from './App';
 // Registrar Service Worker para suporte Offline
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('Service Worker registrado!', reg))
-      // Fix: changed console.err to console.error as 'err' is not a valid method of the Console interface
-      .catch(err => console.error('Falha ao registrar SW', err));
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(reg => {
+        console.log('Service Worker registrado com sucesso!', reg.scope);
+        
+        // Verificar atualizações
+        reg.onupdatefound = () => {
+          const installingWorker = reg.installing;
+          if (installingWorker) {
+            installingWorker.onstatechange = () => {
+              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('Nova versão disponível, recarregue a página.');
+              }
+            };
+          }
+        };
+      })
+      .catch(err => console.error('Falha ao registrar SW:', err));
   });
 }
 

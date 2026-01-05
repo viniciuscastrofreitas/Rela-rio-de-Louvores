@@ -1,26 +1,36 @@
 
-const CACHE_NAME = 'icm-louvores-v2';
-const ASSETS = [
+const CACHE_NAME = 'icm-louvores-v3';
+const PRECACHE_ASSETS = [
   '/',
   '/index.html',
-  '/manifest.json',
   '/index.tsx',
+  '/manifest.json',
+  '/types.ts',
+  '/constants.ts',
+  '/praiseList.ts',
+  '/db.ts',
   'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/icon?family=Material+Icons',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap'
+  'https://fonts.gstatic.com/s/materialicons/v142/flUhRq6tzZclQEJ-Vdg-IuiaDsNcIhQ8tQ.woff2'
 ];
 
-// Instalação e cache dos arquivos essenciais
+// Bibliotecas essenciais do esm.sh
+const ESM_DEPS = [
+  'https://esm.sh/react@^19.2.3',
+  'https://esm.sh/react-dom@^19.2.3',
+  'https://esm.sh/react-dom@^19.2.3/client'
+];
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
+      console.log('Pre-caching assets and dependencies...');
+      return cache.addAll([...PRECACHE_ASSETS, ...ESM_DEPS]);
     })
   );
   self.skipWaiting();
 });
 
-// Ativação e limpeza de caches antigos
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -32,25 +42,44 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Interceptação de requisições para servir do cache se estiver offline
 self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Estratégia Cache-First para Bibliotecas e Fontes Externas
+  if (url.host === 'esm.sh' || url.host.includes('fonts.') || url.host.includes('cdn.tailwindcss.com')) {
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) return cachedResponse;
+        return fetch(request).then((networkResponse) => {
+          const cacheCopy = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, cacheCopy));
+          return networkResponse;
+        });
+      })
+    );
+    return;
+  }
+
+  // Estratégia Network-First com Fallback para Cache para arquivos locais
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
-      
-      return fetch(event.request).then((response) => {
-        // Opcional: Cachear dinamicamente novas requisições (como módulos esm.sh)
-        if (event.request.url.includes('esm.sh') || event.request.url.includes('fonts.')) {
-           const clone = response.clone();
-           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+    fetch(request)
+      .then((networkResponse) => {
+        // Atualiza o cache com a versão mais nova da rede
+        if (request.method === 'GET' && networkResponse.status === 200) {
+          const cacheCopy = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, cacheCopy));
         }
-        return response;
-      }).catch(() => {
-        // Se falhar a rede e não tiver no cache, tenta retornar o index.html (para PWAs)
-        if (event.request.mode === 'navigate') {
-          return caches.match('/');
-        }
-      });
-    })
+        return networkResponse;
+      })
+      .catch(() => {
+        return caches.match(request).then((cachedResponse) => {
+          if (cachedResponse) return cachedResponse;
+          // Se for uma navegação e estiver offline, retorna o index.html
+          if (request.mode === 'navigate') {
+            return caches.match('/index.html');
+          }
+        });
+      })
   );
 });

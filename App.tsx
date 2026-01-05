@@ -6,10 +6,11 @@ import ServiceForm from './components/ServiceForm';
 import HistoryList from './components/HistoryList';
 import RankingList from './components/RankingList';
 import BackupRestore from './components/BackupRestore';
+import UnplayedList from './components/UnplayedList';
 import { initDB, saveData, loadData } from './db';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'new' | 'history' | 'settings'>('new');
+  const [activeTab, setActiveTab] = useState<'new' | 'history' | 'unplayed' | 'settings'>('new');
   const [history, setHistory] = useState<ServiceRecord[]>([]);
   const [customSongs, setCustomSongs] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -109,7 +110,7 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex flex-col pb-24 md:pb-0">
       {/* Header Atualizado */}
       <header className="glass-effect sticky top-0 z-[100] border-b border-slate-200 shadow-sm">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 p-2.5 rounded-2xl shadow-lg shadow-indigo-200 transform rotate-3">
               <span className="material-icons text-white text-2xl">library_music</span>
@@ -121,18 +122,19 @@ const App: React.FC = () => {
           </div>
           
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex bg-slate-100 p-1 rounded-2xl gap-1">
+          <nav className="hidden lg:flex bg-slate-100 p-1 rounded-2xl gap-1">
             <button onClick={() => setActiveTab('new')} className={`px-5 py-2.5 rounded-xl text-sm font-bold tab-transition ${activeTab === 'new' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Novo Culto</button>
             <button onClick={() => setActiveTab('history')} className={`px-5 py-2.5 rounded-xl text-sm font-bold tab-transition ${activeTab === 'history' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Histórico</button>
+            <button onClick={() => setActiveTab('unplayed')} className={`px-5 py-2.5 rounded-xl text-sm font-bold tab-transition ${activeTab === 'unplayed' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Não Cantados</button>
             <button onClick={() => setActiveTab('settings')} className={`px-5 py-2.5 rounded-xl text-sm font-bold tab-transition ${activeTab === 'settings' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Backup</button>
           </nav>
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-4xl mx-auto p-4 md:p-8">
+      <main className="flex-1 w-full max-w-6xl mx-auto p-4 md:p-8">
         <div className="animate-fadeIn">
           {activeTab === 'new' && (
-            <div className="space-y-8">
+            <div className="max-w-4xl mx-auto space-y-8">
               <ServiceForm 
                 onSave={addServiceRecord} 
                 songStats={songStats}
@@ -146,35 +148,50 @@ const App: React.FC = () => {
           )}
           
           {activeTab === 'history' && (
-            <HistoryList 
-              history={history} 
-              onDelete={deleteServiceRecord}
-              onClearAll={() => setHistory([])}
+            <div className="max-w-4xl mx-auto">
+              <HistoryList 
+                history={history} 
+                onDelete={deleteServiceRecord}
+                onClearAll={() => setHistory([])}
+              />
+            </div>
+          )}
+
+          {activeTab === 'unplayed' && (
+            <UnplayedList 
+              fullSongList={fullSongList}
+              history={history}
             />
           )}
 
           {activeTab === 'settings' && (
-            <BackupRestore 
-              history={history}
-              customSongs={customSongs}
-              onRestore={restoreData} 
-            />
+            <div className="max-w-4xl mx-auto">
+              <BackupRestore 
+                history={history}
+                customSongs={customSongs}
+                onRestore={restoreData} 
+              />
+            </div>
           )}
         </div>
       </main>
 
       {/* Mobile Tab Bar */}
-      <nav className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] glass-effect border border-slate-200/50 flex justify-around p-3 z-[100] shadow-2xl rounded-3xl">
+      <nav className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] glass-effect border border-slate-200/50 flex justify-around p-3 z-[100] shadow-2xl rounded-3xl">
         <button onClick={() => setActiveTab('new')} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'new' ? 'text-indigo-600 scale-110' : 'text-slate-400'}`}>
           <span className="material-icons">{activeTab === 'new' ? 'add_circle' : 'add_circle_outline'}</span>
           <span className="text-[10px] font-black uppercase tracking-tighter">Novo</span>
         </button>
         <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'history' ? 'text-indigo-600 scale-110' : 'text-slate-400'}`}>
-          <span className="material-icons">{activeTab === 'history' ? 'history' : 'history'}</span>
+          <span className="material-icons">history</span>
           <span className="text-[10px] font-black uppercase tracking-tighter">Histórico</span>
         </button>
+        <button onClick={() => setActiveTab('unplayed')} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'unplayed' ? 'text-indigo-600 scale-110' : 'text-slate-400'}`}>
+          <span className="material-icons">assignment_late</span>
+          <span className="text-[10px] font-black uppercase tracking-tighter">Restantes</span>
+        </button>
         <button onClick={() => setActiveTab('settings')} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'settings' ? 'text-indigo-600 scale-110' : 'text-slate-400'}`}>
-          <span className="material-icons">{activeTab === 'settings' ? 'cloud_download' : 'cloud_download'}</span>
+          <span className="material-icons">cloud_download</span>
           <span className="text-[10px] font-black uppercase tracking-tighter">Dados</span>
         </button>
       </nav>
