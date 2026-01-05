@@ -1,21 +1,26 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ServiceRecord, SongStats } from '../types';
+import { ServiceRecord, SongStats, ServiceDraft } from '../types';
 
 interface Props {
   onSave: (record: ServiceRecord) => void;
   songStats: Record<string, SongStats>;
   fullSongList: string[];
   onRegisterNewSong: (song: string) => void;
+  draft: ServiceDraft;
+  setDraft: React.Dispatch<React.SetStateAction<ServiceDraft>>;
 }
 
-const ServiceForm: React.FC<Props> = ({ onSave, songStats, fullSongList, onRegisterNewSong }) => {
+const ServiceForm: React.FC<Props> = ({ 
+  onSave, 
+  songStats, 
+  fullSongList, 
+  onRegisterNewSong,
+  draft,
+  setDraft
+}) => {
   const [inputValue, setInputValue] = useState('');
-  const [selectedSongs, setSelectedSongs] = useState<string[]>([]);
-  const [serviceDate, setServiceDate] = useState(new Date().toISOString().split('T')[0]);
-  const [serviceDescription, setServiceDescription] = useState('Noite');
   const [showSuggestions, setShowSuggestions] = useState(false);
-  
   const [infoModalData, setInfoModalData] = useState<{ song: string; type: 'history' | 'count' } | null>(null);
   const [pendingSong, setPendingSong] = useState<{name: string, diff: number, lastDate: string} | null>(null);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
@@ -92,7 +97,10 @@ const ServiceForm: React.FC<Props> = ({ onSave, songStats, fullSongList, onRegis
   };
 
   const executeAdd = (name: string) => {
-    setSelectedSongs(prev => [...prev, name]);
+    setDraft(prev => ({
+      ...prev,
+      songs: [...prev.songs, name]
+    }));
     setInputValue('');
     setShowSuggestions(false);
     setPendingSong(null);
@@ -100,9 +108,9 @@ const ServiceForm: React.FC<Props> = ({ onSave, songStats, fullSongList, onRegis
   };
 
   const shareViaWhatsApp = () => {
-    const dateFormatted = new Date(serviceDate + 'T12:00:00').toLocaleDateString('pt-BR');
-    let message = `*Relatório ICM Santo Antônio II - ${dateFormatted}*\n\n*Culto:* ${serviceDescription}\n\n*Louvores:* \n`;
-    selectedSongs.forEach((song, i) => {
+    const dateFormatted = new Date(draft.date + 'T12:00:00').toLocaleDateString('pt-BR');
+    let message = `*Relatório ICM Santo Antônio II - ${dateFormatted}*\n\n*Culto:* ${draft.description}\n\n*Louvores:* \n`;
+    draft.songs.forEach((song, i) => {
       message += `${i + 1}. ${song}\n`;
     });
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
@@ -117,11 +125,10 @@ const ServiceForm: React.FC<Props> = ({ onSave, songStats, fullSongList, onRegis
   const handleFinalSave = () => {
     onSave({ 
       id: crypto.randomUUID(), 
-      date: serviceDate, 
-      description: serviceDescription, 
-      songs: selectedSongs 
+      date: draft.date, 
+      description: draft.description, 
+      songs: draft.songs 
     });
-    setSelectedSongs([]);
     setShowSaveConfirm(false);
   };
 
@@ -137,8 +144,8 @@ const ServiceForm: React.FC<Props> = ({ onSave, songStats, fullSongList, onRegis
               <span className="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400">event</span>
               <input 
                 type="date" 
-                value={serviceDate} 
-                onChange={(e) => setServiceDate(e.target.value)} 
+                value={draft.date} 
+                onChange={(e) => setDraft(prev => ({ ...prev, date: e.target.value }))} 
                 className="w-full bg-white border border-slate-200 rounded-2xl pl-12 pr-4 py-4 focus:ring-4 focus:ring-indigo-50 outline-none font-bold text-slate-700 shadow-sm transition-all"
               />
             </div>
@@ -149,8 +156,8 @@ const ServiceForm: React.FC<Props> = ({ onSave, songStats, fullSongList, onRegis
               {['Manhã', 'Noite', 'Especial'].map(p => (
                 <button 
                   key={p} 
-                  onClick={() => setServiceDescription(p)} 
-                  className={`flex-1 py-3 text-xs font-black rounded-xl transition-all ${serviceDescription === p ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}
+                  onClick={() => setDraft(prev => ({ ...prev, description: p }))} 
+                  className={`flex-1 py-3 text-xs font-black rounded-xl transition-all ${draft.description === p ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}
                 >
                   {p}
                 </button>
@@ -203,24 +210,24 @@ const ServiceForm: React.FC<Props> = ({ onSave, songStats, fullSongList, onRegis
         <div className="space-y-5">
           <div className="flex justify-between items-center px-1">
             <h3 className="font-extrabold text-slate-800 flex items-center gap-3">
-              <span className="bg-indigo-600 text-white w-7 h-7 rounded-xl flex items-center justify-center text-[10px] shadow-lg shadow-indigo-100">{selectedSongs.length}</span>
+              <span className="bg-indigo-600 text-white w-7 h-7 rounded-xl flex items-center justify-center text-[10px] shadow-lg shadow-indigo-100">{draft.songs.length}</span>
               Louvores para o Culto
             </h3>
-            {selectedSongs.length > 0 && (
+            {draft.songs.length > 0 && (
               <button onClick={shareViaWhatsApp} className="flex items-center gap-1.5 text-emerald-600 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-50 px-3 py-1.5 rounded-full transition-all">
                 <span className="material-icons text-sm">share</span> WhatsApp
               </button>
             )}
           </div>
 
-          {selectedSongs.length === 0 ? (
+          {draft.songs.length === 0 ? (
             <div className="text-center py-16 bg-slate-50/50 rounded-[2.5rem] border-2 border-dashed border-slate-200 text-slate-400 flex flex-col items-center">
               <span className="material-icons text-5xl mb-3 opacity-10">library_music</span>
               <p className="font-bold text-sm tracking-tight">Lista vazia. Adicione os louvores acima.</p>
             </div>
           ) : (
             <div className="flex flex-col gap-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
-              {selectedSongs.map((song, index) => (
+              {draft.songs.map((song, index) => (
                 <div key={index} className="song-card flex items-center justify-between bg-white p-5 rounded-[1.5rem] border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-50 transition-all animate-fadeIn group">
                   <div className="flex items-center gap-4 overflow-hidden">
                     <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-[10px] font-black text-indigo-400 border border-slate-100 group-hover:bg-indigo-600 group-hover:text-white transition-all">
@@ -231,7 +238,7 @@ const ServiceForm: React.FC<Props> = ({ onSave, songStats, fullSongList, onRegis
                   <div className="flex gap-1.5 ml-4 shrink-0">
                     <button onClick={() => setInfoModalData({ song, type: 'history' })} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all" title="Ver Datas"><span className="material-icons text-xl">event_available</span></button>
                     <button onClick={() => setInfoModalData({ song, type: 'count' })} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-2xl transition-all" title="Total"><span className="material-icons text-xl">bar_chart</span></button>
-                    <button onClick={() => setSelectedSongs(prev => prev.filter((_, i) => i !== index))} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all" title="Remover"><span className="material-icons text-xl">delete_outline</span></button>
+                    <button onClick={() => setDraft(prev => ({ ...prev, songs: prev.songs.filter((_, i) => i !== index) }))} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all" title="Remover"><span className="material-icons text-xl">delete_outline</span></button>
                   </div>
                 </div>
               ))}
@@ -241,8 +248,8 @@ const ServiceForm: React.FC<Props> = ({ onSave, songStats, fullSongList, onRegis
 
         <button
           onClick={() => setShowSaveConfirm(true)}
-          disabled={selectedSongs.length === 0}
-          className={`w-full py-6 rounded-[2rem] font-black text-lg tracking-widest shadow-2xl transition-all transform active:scale-[0.97] flex items-center justify-center gap-4 ${selectedSongs.length > 0 ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}`}
+          disabled={draft.songs.length === 0}
+          className={`w-full py-6 rounded-[2rem] font-black text-lg tracking-widest shadow-2xl transition-all transform active:scale-[0.97] flex items-center justify-center gap-4 ${draft.songs.length > 0 ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}`}
         >
           <span className="material-icons text-2xl">save</span>
           SALVAR RELATÓRIO DO CULTO
@@ -262,8 +269,8 @@ const ServiceForm: React.FC<Props> = ({ onSave, songStats, fullSongList, onRegis
             <div className="mb-8">
               <input 
                 type="date" 
-                value={serviceDate} 
-                onChange={(e) => setServiceDate(e.target.value)} 
+                value={draft.date} 
+                onChange={(e) => setDraft(prev => ({ ...prev, date: e.target.value }))} 
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-4 focus:ring-4 focus:ring-indigo-50 outline-none font-bold text-center text-indigo-700 shadow-inner"
               />
             </div>

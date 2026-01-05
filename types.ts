@@ -6,6 +6,12 @@ export interface ServiceRecord {
   songs: string[];
 }
 
+export interface ServiceDraft {
+  date: string;
+  description: string;
+  songs: string[];
+}
+
 export interface SongStats {
   song: string;
   count: number;
@@ -16,4 +22,5 @@ export interface SongStats {
 export interface AppData {
   history: ServiceRecord[];
   customSongs?: string[];
+  draft?: ServiceDraft;
 }

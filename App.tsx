@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { INITIAL_PRAISE_LIST, STORAGE_KEY } from './constants';
-import { ServiceRecord, AppData, SongStats } from './types';
+import { INITIAL_PRAISE_LIST } from './constants';
+import { ServiceRecord, SongStats, ServiceDraft } from './types';
 import ServiceForm from './components/ServiceForm';
 import HistoryList from './components/HistoryList';
 import RankingList from './components/RankingList';
@@ -15,6 +15,13 @@ const App: React.FC = () => {
   const [customSongs, setCustomSongs] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  // Estado do Rascunho (Draft) elevado para o App
+  const [draft, setDraft] = useState<ServiceDraft>({
+    date: new Date().toISOString().split('T')[0],
+    description: 'Noite',
+    songs: []
+  });
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -30,6 +37,7 @@ const App: React.FC = () => {
         if (data) {
           if (data.history) setHistory(data.history);
           if (data.customSongs) setCustomSongs(data.customSongs);
+          if (data.draft) setDraft(data.draft);
         }
       } catch (e) {
         console.error("Erro ao carregar banco de dados local", e);
@@ -45,11 +53,12 @@ const App: React.FC = () => {
     };
   }, []);
 
+  // Salva automaticamente sempre que houver mudanças no histórico, hinos customizados ou no rascunho
   useEffect(() => {
     if (!isLoading) {
-      saveData({ history, customSongs });
+      saveData({ history, customSongs, draft });
     }
-  }, [history, customSongs, isLoading]);
+  }, [history, customSongs, draft, isLoading]);
 
   const fullSongList = useMemo(() => {
     const combined = [...new Set([...INITIAL_PRAISE_LIST, ...customSongs])];
@@ -64,6 +73,12 @@ const App: React.FC = () => {
 
   const addServiceRecord = (record: ServiceRecord) => {
     setHistory(prev => [record, ...prev]);
+    // Limpa o rascunho após salvar
+    setDraft({
+      date: new Date().toISOString().split('T')[0],
+      description: 'Noite',
+      songs: []
+    });
     setActiveTab('history');
   };
 
@@ -117,7 +132,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col pb-24 md:pb-0">
-      {/* Offline Alert */}
       {isOffline && (
         <div className="bg-amber-500 text-white text-[10px] font-black uppercase tracking-[0.2em] py-1.5 text-center flex items-center justify-center gap-2 animate-pulse z-[200]">
           <span className="material-icons text-sm">cloud_off</span>
@@ -125,7 +139,6 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Header */}
       <header className="glass-effect sticky top-0 z-[100] border-b border-slate-200 shadow-sm">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -156,6 +169,9 @@ const App: React.FC = () => {
                 songStats={songStats}
                 fullSongList={fullSongList}
                 onRegisterNewSong={registerNewSong}
+                // Passando o estado do rascunho e suas funções
+                draft={draft}
+                setDraft={setDraft}
               />
               <div className="pt-4">
                 <RankingList songStats={songStats} />
@@ -192,7 +208,6 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* Mobile Tab Bar */}
       <nav className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] glass-effect border border-slate-200/50 flex justify-around p-3 z-[100] shadow-2xl rounded-3xl">
         <button onClick={() => setActiveTab('new')} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'new' ? 'text-indigo-600 scale-110' : 'text-slate-400'}`}>
           <span className="material-icons">{activeTab === 'new' ? 'add_circle' : 'add_circle_outline'}</span>
