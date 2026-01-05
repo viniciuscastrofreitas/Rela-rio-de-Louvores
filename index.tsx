@@ -3,26 +3,31 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
-// Registrar Service Worker para suporte Offline
+// Registrar Service Worker para suporte Offline robusto
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js', { scope: '/' })
       .then(reg => {
-        console.log('Service Worker registrado com sucesso!', reg.scope);
+        console.log('Service Worker ativo:', reg.scope);
         
-        // Verificar atualizações
+        // Forçar controle imediato da página pelo SW
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+
         reg.onupdatefound = () => {
           const installingWorker = reg.installing;
           if (installingWorker) {
             installingWorker.onstatechange = () => {
               if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('Nova versão disponível, recarregue a página.');
+                // Notificar usuário sobre atualização (opcional)
+                console.log('App atualizado. Por favor, recarregue.');
               }
             };
           }
         };
       })
-      .catch(err => console.error('Falha ao registrar SW:', err));
+      .catch(err => console.error('Erro ao registrar Service Worker:', err));
   });
 }
 

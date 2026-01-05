@@ -14,8 +14,15 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<ServiceRecord[]>([]);
   const [customSongs, setCustomSongs] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
     const setup = async () => {
       try {
         await initDB();
@@ -31,6 +38,11 @@ const App: React.FC = () => {
       }
     };
     setup();
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   useEffect(() => {
@@ -44,11 +56,8 @@ const App: React.FC = () => {
     return combined.sort((a, b) => {
       const aIsCIAS = a.startsWith('(CIAS)');
       const bIsCIAS = b.startsWith('(CIAS)');
-      
-      // Prioridade: Não-CIAS primeiro
       if (aIsCIAS && !bIsCIAS) return 1;
       if (!aIsCIAS && bIsCIAS) return -1;
-      
       return a.localeCompare(b);
     });
   }, [customSongs]);
@@ -108,7 +117,15 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col pb-24 md:pb-0">
-      {/* Header Atualizado */}
+      {/* Offline Alert */}
+      {isOffline && (
+        <div className="bg-amber-500 text-white text-[10px] font-black uppercase tracking-[0.2em] py-1.5 text-center flex items-center justify-center gap-2 animate-pulse z-[200]">
+          <span className="material-icons text-sm">cloud_off</span>
+          Modo Offline Ativado - Dados salvos localmente
+        </div>
+      )}
+
+      {/* Header */}
       <header className="glass-effect sticky top-0 z-[100] border-b border-slate-200 shadow-sm">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -121,7 +138,6 @@ const App: React.FC = () => {
             </div>
           </div>
           
-          {/* Desktop Navigation */}
           <nav className="hidden lg:flex bg-slate-100 p-1 rounded-2xl gap-1">
             <button onClick={() => setActiveTab('new')} className={`px-5 py-2.5 rounded-xl text-sm font-bold tab-transition ${activeTab === 'new' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Novo Culto</button>
             <button onClick={() => setActiveTab('history')} className={`px-5 py-2.5 rounded-xl text-sm font-bold tab-transition ${activeTab === 'history' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Histórico</button>
