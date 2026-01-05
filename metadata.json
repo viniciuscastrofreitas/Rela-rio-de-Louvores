@@ -1,5 +1,5 @@
 {
-  "name": "Relatório de Culto - Gestão de Louvores",
-  "description": "Aplicativo para gestão de relatórios de cultos com armazenamento persistente via IndexedDB e suporte a PWA para instalação no dispositivo.",
+  "name": "ICM Santo Antônio II - Louvores",
+  "description": "Sistema de gestão de louvores para ICM Santo Antônio II com histórico, ranking e backup.",
   "requestFramePermissions": []
 }

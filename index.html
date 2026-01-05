@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ICM Santo Antônio II - Gestão</title>
+    <title>ICM Santo Antônio II - Gestão de Louvores</title>
     <meta name="theme-color" content="#4f46e5">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -44,12 +44,18 @@
 
         .tab-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         
-        /* Custom card style */
         .song-card {
             transition: all 0.2s ease;
         }
         .song-card:active {
             transform: scale(0.98);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
         }
     </style>
 <script type="importmap">
@@ -64,5 +70,7 @@
 </head>
 <body>
     <div id="root"></div>
+    <!-- Script essencial para carregar o App -->
+    <script type="module" src="index.tsx"></script>
 </body>
 </html>

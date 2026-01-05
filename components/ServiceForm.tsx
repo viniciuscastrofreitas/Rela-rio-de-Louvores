@@ -144,7 +144,7 @@ const ServiceForm: React.FC<Props> = ({ onSave, songStats, fullSongList, onRegis
             </div>
           </div>
           <div>
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block px-1">Período / Gravação</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block px-1">Período / Culto</label>
             <div className="flex bg-white border border-slate-200 p-1.5 rounded-2xl shadow-sm">
               {['Manhã', 'Noite', 'Especial'].map(p => (
                 <button 
@@ -173,10 +173,10 @@ const ServiceForm: React.FC<Props> = ({ onSave, songStats, fullSongList, onRegis
                 onChange={(e) => { setInputValue(e.target.value); setShowSuggestions(true); }}
                 onFocus={() => setShowSuggestions(true)}
                 className="w-full pl-14 pr-4 py-5 bg-slate-50 border-2 border-transparent rounded-[1.5rem] focus:bg-white focus:border-indigo-100 focus:ring-4 focus:ring-indigo-50 outline-none transition-all font-semibold shadow-inner"
-                placeholder="Ex: 01 ou O Sangue..."
+                placeholder="Comece a digitar o louvor..."
               />
               {showSuggestions && suggestions.length > 0 && (
-                <div ref={suggestionRef} className="absolute z-[110] w-full mt-3 bg-white border border-slate-200 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden animate-scaleUp max-h-80 overflow-y-auto">
+                <div ref={suggestionRef} className="absolute z-[110] w-full mt-3 bg-white border border-slate-200 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden animate-scaleUp max-h-80 overflow-y-auto custom-scrollbar">
                   {suggestions.map((s, idx) => (
                     <div
                       key={idx}
@@ -204,20 +204,19 @@ const ServiceForm: React.FC<Props> = ({ onSave, songStats, fullSongList, onRegis
           <div className="flex justify-between items-center px-1">
             <h3 className="font-extrabold text-slate-800 flex items-center gap-3">
               <span className="bg-indigo-600 text-white w-7 h-7 rounded-xl flex items-center justify-center text-[10px] shadow-lg shadow-indigo-100">{selectedSongs.length}</span>
-              Ordem dos Louvores
+              Louvores para o Culto
             </h3>
             {selectedSongs.length > 0 && (
               <button onClick={shareViaWhatsApp} className="flex items-center gap-1.5 text-emerald-600 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-50 px-3 py-1.5 rounded-full transition-all">
-                <span className="material-icons text-sm">whatsapp</span> WhatsApp
+                <span className="material-icons text-sm">share</span> WhatsApp
               </button>
             )}
           </div>
 
           {selectedSongs.length === 0 ? (
             <div className="text-center py-16 bg-slate-50/50 rounded-[2.5rem] border-2 border-dashed border-slate-200 text-slate-400 flex flex-col items-center">
-              <span className="material-icons text-5xl mb-3 opacity-10">playlist_play</span>
-              <p className="font-bold text-sm tracking-tight">Nenhum louvor adicionado à escala.</p>
-              <p className="text-[10px] uppercase font-black tracking-widest mt-1 opacity-40">Busque hinos acima para começar</p>
+              <span className="material-icons text-5xl mb-3 opacity-10">library_music</span>
+              <p className="font-bold text-sm tracking-tight">Lista vazia. Adicione os louvores acima.</p>
             </div>
           ) : (
             <div className="flex flex-col gap-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
@@ -229,9 +228,9 @@ const ServiceForm: React.FC<Props> = ({ onSave, songStats, fullSongList, onRegis
                     </div>
                     <span className="font-extrabold text-slate-700 truncate text-sm">{song}</span>
                   </div>
-                  <div className="flex gap-1.5 ml-4 shrink-0 opacity-80 group-hover:opacity-100 transition-all">
-                    <button onClick={() => setInfoModalData({ song, type: 'history' })} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all" title="Datas"><span className="material-icons text-xl">event_available</span></button>
-                    <button onClick={() => setInfoModalData({ song, type: 'count' })} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-2xl transition-all" title="Total"><span className="material-icons text-xl">insights</span></button>
+                  <div className="flex gap-1.5 ml-4 shrink-0">
+                    <button onClick={() => setInfoModalData({ song, type: 'history' })} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all" title="Ver Datas"><span className="material-icons text-xl">event_available</span></button>
+                    <button onClick={() => setInfoModalData({ song, type: 'count' })} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-2xl transition-all" title="Total"><span className="material-icons text-xl">bar_chart</span></button>
                     <button onClick={() => setSelectedSongs(prev => prev.filter((_, i) => i !== index))} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all" title="Remover"><span className="material-icons text-xl">delete_outline</span></button>
                   </div>
                 </div>
@@ -240,53 +239,52 @@ const ServiceForm: React.FC<Props> = ({ onSave, songStats, fullSongList, onRegis
           )}
         </div>
 
-        {/* Botão Salvar Principal */}
         <button
           onClick={() => setShowSaveConfirm(true)}
           disabled={selectedSongs.length === 0}
           className={`w-full py-6 rounded-[2rem] font-black text-lg tracking-widest shadow-2xl transition-all transform active:scale-[0.97] flex items-center justify-center gap-4 ${selectedSongs.length > 0 ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}`}
         >
-          <span className="material-icons text-2xl">save_as</span>
-          FINALIZAR RELATÓRIO
+          <span className="material-icons text-2xl">save</span>
+          SALVAR RELATÓRIO DO CULTO
         </button>
       </div>
 
-      {/* Save Confirmation Modal with Date Confirmation */}
+      {/* Save Confirmation Modal */}
       {showSaveConfirm && (
         <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[200] p-6 backdrop-blur-sm">
           <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-sm p-10 animate-scaleUp text-center">
             <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <span className="material-icons text-4xl">check_circle_outline</span>
+              <span className="material-icons text-4xl">playlist_add_check</span>
             </div>
-            <h3 className="text-2xl font-black text-slate-800 mb-2">Salvar Relatório?</h3>
-            <p className="text-slate-500 text-sm mb-6">Confirme a data do culto para o registro final:</p>
+            <h3 className="text-2xl font-black text-slate-800 mb-2">Finalizar Registro?</h3>
+            <p className="text-slate-500 text-sm mb-6">Confirme a data para salvar este culto:</p>
             
             <div className="mb-8">
               <input 
                 type="date" 
                 value={serviceDate} 
                 onChange={(e) => setServiceDate(e.target.value)} 
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-4 focus:ring-4 focus:ring-indigo-50 outline-none font-bold text-center text-indigo-700"
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-4 focus:ring-4 focus:ring-indigo-50 outline-none font-bold text-center text-indigo-700 shadow-inner"
               />
             </div>
 
             <div className="flex flex-col gap-3">
-              <button onClick={handleFinalSave} className="w-full py-5 bg-indigo-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-100">SALVAR AGORA</button>
-              <button onClick={() => setShowSaveConfirm(false)} className="w-full py-3 text-slate-400 font-bold">VOLTAR</button>
+              <button onClick={handleFinalSave} className="w-full py-5 bg-indigo-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-100">CONFIRMAR E SALVAR</button>
+              <button onClick={() => setShowSaveConfirm(false)} className="w-full py-3 text-slate-400 font-bold">CANCELAR</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Warning Modals */}
+      {/* Warning Modal (Hino recente) */}
       {pendingSong && (
         <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[200] p-6 backdrop-blur-sm">
           <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-sm p-10 border-t-[12px] border-amber-400 animate-scaleUp text-center">
             <div className="w-24 h-24 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
-              <span className="material-icons text-5xl">warning_amber</span>
+              <span className="material-icons text-5xl">warning</span>
             </div>
-            <h3 className="text-2xl font-black text-slate-800 mb-2">Atenção!</h3>
-            <p className="text-slate-500 text-sm mb-6">Este louvor foi cantado recentemente:</p>
+            <h3 className="text-2xl font-black text-slate-800 mb-2">Louvor Recente</h3>
+            <p className="text-slate-500 text-sm mb-6">Este hino foi cantado há pouco tempo:</p>
             <div className="bg-slate-50 p-6 rounded-[2rem] mb-8 border border-slate-100">
               <p className="text-indigo-700 font-extrabold text-lg mb-2">{pendingSong.name}</p>
               <div className="flex items-center justify-center gap-2 text-slate-400">
@@ -295,20 +293,20 @@ const ServiceForm: React.FC<Props> = ({ onSave, songStats, fullSongList, onRegis
               </div>
             </div>
             <div className="flex flex-col gap-4">
-              <button onClick={() => executeAdd(pendingSong.name)} className="w-full py-5 bg-indigo-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-100 active:scale-95 transition-all">ADICIONAR MESMO ASSIM</button>
-              <button onClick={() => setPendingSong(null)} className="w-full py-4 text-slate-400 font-bold hover:text-slate-600 transition-all">CANCELAR E BUSCAR OUTRO</button>
+              <button onClick={() => executeAdd(pendingSong.name)} className="w-full py-5 bg-indigo-600 text-white font-black rounded-2xl shadow-xl active:scale-95 transition-all">ADICIONAR ASSIM MESMO</button>
+              <button onClick={() => setPendingSong(null)} className="w-full py-4 text-slate-400 font-bold hover:text-slate-600 transition-all">NÃO ADICIONAR</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Info Modals */}
+      {/* Info Modal */}
       {infoModalData && (
         <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[200] p-6 backdrop-blur-sm" onClick={() => setInfoModalData(null)}>
           <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-md p-10 animate-scaleUp" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-start mb-8">
               <div className="space-y-1">
-                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] px-1 block">Info do Louvor</span>
+                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] px-1 block">Detalhes do Louvor</span>
                 <h3 className="text-xl font-extrabold text-slate-800 leading-tight pr-4">{infoModalData.song}</h3>
               </div>
               <button onClick={() => setInfoModalData(null)} className="bg-slate-100 text-slate-400 w-12 h-12 rounded-full flex items-center justify-center hover:bg-slate-200 transition-all"><span className="material-icons">close</span></button>
@@ -317,29 +315,29 @@ const ServiceForm: React.FC<Props> = ({ onSave, songStats, fullSongList, onRegis
             <div className="py-8 border-y border-slate-100 mb-8">
               {infoModalData.type === 'history' ? (
                 <div className="space-y-4">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Histórico de Escalas:</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Datas que já foi cantado:</p>
                   <div className="max-h-60 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                     {songStats[infoModalData.song]?.history.length > 0 ? (
                       songStats[infoModalData.song].history.map((d, i) => (
                         <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                           <span className="text-slate-700 font-black text-sm">{formatDate(d)}</span>
-                          <span className="material-icons text-emerald-500 text-sm">check_circle</span>
+                          <span className="material-icons text-emerald-500 text-sm">check</span>
                         </div>
                       ))
-                    ) : <p className="text-slate-400 italic text-center py-4">Nenhum registro anterior.</p>}
+                    ) : <p className="text-slate-400 italic text-center py-4">Sem registros anteriores.</p>}
                   </div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <div className="bg-indigo-50 w-32 h-32 rounded-[2.5rem] flex items-center justify-center mb-6 shadow-inner transform rotate-6 group">
-                    <span className="text-6xl font-black text-indigo-600 group-hover:scale-110 transition-all">{songStats[infoModalData.song]?.count || 0}</span>
+                  <div className="bg-indigo-50 w-32 h-32 rounded-[2.5rem] flex items-center justify-center mb-6 shadow-inner transform rotate-6">
+                    <span className="text-6xl font-black text-indigo-600">{songStats[infoModalData.song]?.count || 0}</span>
                   </div>
-                  <p className="text-slate-400 font-black uppercase text-[10px] tracking-widest">Vezes Registradas no Sistema</p>
+                  <p className="text-slate-400 font-black uppercase text-[10px] tracking-widest">Total de registros</p>
                 </div>
               )}
             </div>
             
-            <button onClick={() => setInfoModalData(null)} className="w-full py-5 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-200">FECHAR DETALHES</button>
+            <button onClick={() => setInfoModalData(null)} className="w-full py-5 bg-slate-900 text-white font-black rounded-2xl shadow-xl">FECHAR</button>
           </div>
         </div>
       )}
