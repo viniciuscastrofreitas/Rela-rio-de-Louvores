@@ -1,0 +1,5 @@
+{
+  "name": "Relatório de Culto - Gestão de Louvores",
+  "description": "Aplicativo para gestão de relatórios de cultos com armazenamento persistente via IndexedDB e suporte a PWA para instalação no dispositivo.",
+  "requestFramePermissions": []
+}
