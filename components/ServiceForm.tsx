@@ -228,17 +228,37 @@ const ServiceForm: React.FC<Props> = ({
           ) : (
             <div className="flex flex-col gap-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
               {draft.songs.map((song, index) => (
-                <div key={index} className="song-card flex items-center justify-between bg-white p-5 rounded-[1.5rem] border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-50 transition-all animate-fadeIn group">
-                  <div className="flex items-center gap-4 overflow-hidden">
-                    <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-[10px] font-black text-indigo-400 border border-slate-100 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                <div key={index} className="song-card flex flex-col bg-white p-5 rounded-[1.5rem] border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-50 transition-all animate-fadeIn group">
+                  <div className="flex items-start gap-4 w-full mb-4">
+                    <div className="w-8 h-8 shrink-0 rounded-full bg-slate-50 flex items-center justify-center text-[10px] font-black text-indigo-400 border border-slate-100 group-hover:bg-indigo-600 group-hover:text-white transition-all mt-0.5">
                       {String(index + 1).padStart(2, '0')}
                     </div>
-                    <span className="font-extrabold text-slate-700 truncate text-sm">{song}</span>
+                    <span className="font-extrabold text-slate-700 text-sm flex-1 leading-snug pt-1">{song}</span>
                   </div>
-                  <div className="flex gap-1.5 ml-4 shrink-0">
-                    <button onClick={() => setInfoModalData({ song, type: 'history' })} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all" title="Ver Datas"><span className="material-icons text-xl">event_available</span></button>
-                    <button onClick={() => setInfoModalData({ song, type: 'count' })} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-2xl transition-all" title="Total"><span className="material-icons text-xl">bar_chart</span></button>
-                    <button onClick={() => setDraft(prev => ({ ...prev, songs: prev.songs.filter((_, i) => i !== index) }))} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all" title="Remover"><span className="material-icons text-xl">delete_outline</span></button>
+                  
+                  {/* Container de Ações Centralizado */}
+                  <div className="grid grid-cols-3 gap-1 border-t border-slate-50 pt-3">
+                    <button 
+                      onClick={() => setInfoModalData({ song, type: 'history' })} 
+                      className="flex flex-col items-center justify-center gap-1 py-1 text-slate-400 hover:text-indigo-600 transition-all group/btn"
+                    >
+                      <span className="material-icons text-lg">event_available</span>
+                      <span className="text-[8px] font-black uppercase tracking-tighter">Histórico</span>
+                    </button>
+                    <button 
+                      onClick={() => setInfoModalData({ song, type: 'count' })} 
+                      className="flex flex-col items-center justify-center gap-1 py-1 text-slate-400 hover:text-emerald-600 transition-all group/btn"
+                    >
+                      <span className="material-icons text-lg">bar_chart</span>
+                      <span className="text-[8px] font-black uppercase tracking-tighter">Frequência</span>
+                    </button>
+                    <button 
+                      onClick={() => setDraft(prev => ({ ...prev, songs: prev.songs.filter((_, i) => i !== index) }))} 
+                      className="flex flex-col items-center justify-center gap-1 py-1 text-slate-300 hover:text-rose-600 transition-all group/btn"
+                    >
+                      <span className="material-icons text-lg">delete_outline</span>
+                      <span className="text-[8px] font-black uppercase tracking-tighter">Remover</span>
+                    </button>
                   </div>
                 </div>
               ))}

@@ -27,16 +27,32 @@ const CATEGORIES: GroupDefinition[] = [
   { name: "CORINHOS", min: 731, max: 794 },
 ];
 
+const CIAS_CATEGORIES: GroupDefinition[] = [
+  { name: "CLAMOR", min: 1, max: 13 },
+  { name: "INVOCAÇÃO E COMUNHÃO", min: 14, max: 22 },
+  { name: "DEDICAÇÃO", min: 23, max: 59 },
+  { name: "MORTE, RESSURREIÇÃO E SALVAÇÃO", min: 60, max: 108 },
+  { name: "CONSOLO E ENCORAJAMENTO", min: 109, max: 132 },
+  { name: "SANTIFICAÇÃO E DERRAMAMENTO DO E.S.", min: 133, max: 180 },
+  { name: "VOLTA DE JESUS E ETERNIDADE", min: 181, max: 219 },
+  { name: "LOUVOR", min: 220, max: 241 },
+];
+
 const UnplayedList: React.FC<Props> = ({ fullSongList, history }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isPrincipaisExpanded, setIsPrincipaisExpanded] = useState(true);
   const [isCiasExpanded, setIsCiasExpanded] = useState(true);
+  
   const [expandedSubCats, setExpandedSubCats] = useState<Record<string, boolean>>(
     CATEGORIES.reduce((acc, cat) => ({ ...acc, [cat.name]: false }), {})
   );
 
+  const [expandedCiasSubCats, setExpandedCiasSubCats] = useState<Record<string, boolean>>(
+    CIAS_CATEGORIES.reduce((acc, cat) => ({ ...acc, [cat.name]: false }), {})
+  );
+
   const extractNumber = (song: string): number | null => {
-    const match = song.match(/^(\d+)/);
+    const match = song.match(/(\d+)/);
     return match ? parseInt(match[1], 10) : null;
   };
 
@@ -44,10 +60,13 @@ const UnplayedList: React.FC<Props> = ({ fullSongList, history }) => {
     setExpandedSubCats(prev => ({ ...prev, [name]: !prev[name] }));
   };
 
+  const toggleCiasSubCat = (name: string) => {
+    setExpandedCiasSubCats(prev => ({ ...prev, [name]: !prev[name] }));
+  };
+
   const { 
     groupedMain, 
-    ciasUnplayed, 
-    extraMain,
+    groupedCias,
     mainStats,
     ciasStats
   } = useMemo(() => {
@@ -56,10 +75,14 @@ const UnplayedList: React.FC<Props> = ({ fullSongList, history }) => {
       record.songs.forEach(song => playedSongsSet.add(song.trim()));
     });
 
-    const cias: string[] = [];
     const mainGroups: Record<string, string[]> = {};
     CATEGORIES.forEach(cat => mainGroups[cat.name] = []);
-    const extra: string[] = [];
+    
+    const ciasGroups: Record<string, string[]> = {};
+    CIAS_CATEGORIES.forEach(cat => ciasGroups[cat.name] = []);
+
+    const extraMain: string[] = [];
+    const extraCias: string[] = [];
 
     let unplayedMainCount = 0;
     let totalMainCount = 0;
@@ -80,15 +103,25 @@ const UnplayedList: React.FC<Props> = ({ fullSongList, history }) => {
         if (isUnplayed) unplayedMainCount++;
       }
       
-      // Filtragem por busca para as listas visuais
+      // Organização por categorias para exibição
       if (isUnplayed) {
         const isSearchMatch = song.toLowerCase().includes(searchTerm.toLowerCase());
         if (isSearchMatch) {
+          const num = extractNumber(song);
+          let added = false;
+          
           if (isCias) {
-            cias.push(song);
+            if (num !== null) {
+              for (const cat of CIAS_CATEGORIES) {
+                if (num >= cat.min && num <= cat.max) {
+                  ciasGroups[cat.name].push(song);
+                  added = true;
+                  break;
+                }
+              }
+            }
+            if (!added) extraCias.push(song);
           } else {
-            const num = extractNumber(song);
-            let added = false;
             if (num !== null) {
               for (const cat of CATEGORIES) {
                 if (num >= cat.min && num <= cat.max) {
@@ -98,7 +131,7 @@ const UnplayedList: React.FC<Props> = ({ fullSongList, history }) => {
                 }
               }
             }
-            if (!added) extra.push(song);
+            if (!added) extraMain.push(song);
           }
         }
       }
@@ -106,8 +139,7 @@ const UnplayedList: React.FC<Props> = ({ fullSongList, history }) => {
 
     return { 
       groupedMain: mainGroups, 
-      ciasUnplayed: cias, 
-      extraMain: extra,
+      groupedCias: ciasGroups,
       mainStats: {
         unplayed: unplayedMainCount,
         total: totalMainCount,
@@ -267,34 +299,57 @@ const UnplayedList: React.FC<Props> = ({ fullSongList, history }) => {
         <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden flex flex-col">
           <button 
             onClick={() => setIsCiasExpanded(!isCiasExpanded)}
-            className="w-full p-6 flex justify-between items-center bg-indigo-50/30 hover:bg-indigo-100/30 transition-colors"
+            className="w-full p-6 flex justify-between items-center bg-emerald-50/30 hover:bg-emerald-100/30 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <span className={`material-icons text-indigo-500 transition-transform duration-300 ${isCiasExpanded ? '' : '-rotate-90'}`}>
+              <span className={`material-icons text-emerald-600 transition-transform duration-300 ${isCiasExpanded ? '' : '-rotate-90'}`}>
                 keyboard_arrow_down
               </span>
-              <h3 className="font-black text-indigo-700 uppercase tracking-widest text-xs flex items-center gap-2">
+              <h3 className="font-black text-emerald-700 uppercase tracking-widest text-xs flex items-center gap-2">
                 Louvores CIAS
-                <span className="bg-indigo-700 text-white px-2 py-0.5 rounded-full text-[10px] shadow-sm">{ciasUnplayed.length}</span>
+                <span className="bg-emerald-700 text-white px-2 py-0.5 rounded-full text-[10px] shadow-sm">{ciasStats.unplayed}</span>
               </h3>
             </div>
-            <span className="text-[9px] font-bold text-indigo-400 uppercase">{isCiasExpanded ? 'Recolher' : 'Expandir'}</span>
+            <span className="text-[9px] font-bold text-emerald-600 uppercase">{isCiasExpanded ? 'Recolher' : 'Expandir'}</span>
           </button>
 
           {isCiasExpanded && (
-            <div className="p-4 max-h-[70vh] overflow-y-auto custom-scrollbar space-y-2 bg-white">
-              {ciasUnplayed.length > 0 ? (
-                ciasUnplayed.map((song, i) => (
-                  <div key={i} className="p-4 bg-indigo-50/20 rounded-2xl border border-transparent hover:border-indigo-200 hover:bg-white transition-all group">
-                    <span className="text-xs font-bold text-slate-600 group-hover:text-indigo-700">{song}</span>
-                  </div>
-                ))
-              ) : (
-                <div className="py-20 flex flex-col items-center justify-center text-slate-300">
-                  <span className="material-icons text-5xl mb-3 opacity-20">verified</span>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Parabéns! Todos os hinos CIAS já foram cantados.</p>
+            <div className="p-4 space-y-3 max-h-[70vh] overflow-y-auto custom-scrollbar bg-white">
+              {CIAS_CATEGORIES.map(cat => (
+                <div key={cat.name} className="border border-slate-100 rounded-[1.5rem] overflow-hidden">
+                  <button 
+                    onClick={() => toggleCiasSubCat(cat.name)}
+                    className={`w-full px-5 py-4 flex justify-between items-center transition-colors ${expandedCiasSubCats[cat.name] ? 'bg-emerald-50/30' : 'bg-slate-50/30 hover:bg-slate-50'}`}
+                  >
+                    <div className="flex flex-col items-start">
+                      <span className={`text-[10px] font-black tracking-wider text-left pr-4 ${expandedCiasSubCats[cat.name] ? 'text-emerald-600' : 'text-slate-500'}`}>
+                        {cat.name}
+                      </span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Faltam {groupedCias[cat.name].length} hinos</span>
+                    </div>
+                    <span className="material-icons text-slate-300 text-lg">
+                      {expandedCiasSubCats[cat.name] ? 'expand_less' : 'expand_more'}
+                    </span>
+                  </button>
+                  
+                  {expandedCiasSubCats[cat.name] && (
+                    <div className="p-3 grid gap-2 animate-fadeIn">
+                      {groupedCias[cat.name].length > 0 ? (
+                        groupedCias[cat.name].map((song, i) => (
+                          <div key={i} className="p-3.5 bg-slate-50/50 rounded-xl text-xs font-bold text-slate-600 border border-transparent hover:border-emerald-100 hover:bg-white transition-all">
+                            {song}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="py-4 text-center">
+                          <span className="material-icons text-emerald-500 text-xl mb-1">done_all</span>
+                          <p className="text-[10px] text-slate-400 italic uppercase font-black">Todos desta categoria já foram cantados!</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
+              ))}
             </div>
           )}
         </div>
