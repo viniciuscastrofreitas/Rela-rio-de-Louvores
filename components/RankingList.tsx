@@ -9,12 +9,14 @@ interface Props {
 const RankingList: React.FC<Props> = ({ songStats }) => {
   const top10 = useMemo(() => {
     return Object.values(songStats)
+      // Mostra apenas louvores que houveram repetição (cantados mais de uma vez)
+      .filter(stat => stat.count > 1)
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
   }, [songStats]);
 
   if (top10.length === 0) {
-    return null; // Não mostra se não tiver dados
+    return null; // Não mostra se não houver louvores repetidos
   }
 
   const maxCount = top10[0]?.count || 1;
@@ -26,7 +28,7 @@ const RankingList: React.FC<Props> = ({ songStats }) => {
           <span className="material-icons text-amber-500">emoji_events</span>
           Ranking: Mais Cantados
         </h2>
-        <span className="bg-slate-100 px-3 py-1 rounded-full text-[10px] font-black text-slate-500 uppercase tracking-widest">Top 10</span>
+        <span className="bg-indigo-50 px-3 py-1 rounded-full text-[10px] font-black text-indigo-500 uppercase tracking-widest">Apenas Repetidos</span>
       </div>
 
       <div className="space-y-6">

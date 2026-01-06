@@ -61,7 +61,11 @@ const App: React.FC = () => {
   }, [history, customSongs, draft, isLoading]);
 
   const fullSongList = useMemo(() => {
-    const combined = [...new Set([...INITIAL_PRAISE_LIST, ...customSongs])];
+    // Aplicamos trim em tudo para evitar "Hino 1" e "Hino 1 " serem vistos como diferentes
+    const cleanedInitial = INITIAL_PRAISE_LIST.map(s => s.trim());
+    const cleanedCustom = customSongs.map(s => s.trim());
+    
+    const combined = [...new Set([...cleanedInitial, ...cleanedCustom])];
     return combined.sort((a, b) => {
       const aIsCIAS = a.startsWith('(CIAS)');
       const bIsCIAS = b.startsWith('(CIAS)');
@@ -87,8 +91,9 @@ const App: React.FC = () => {
   };
 
   const registerNewSong = (songName: string) => {
-    if (!fullSongList.includes(songName)) {
-      setCustomSongs(prev => [...prev, songName]);
+    const trimmedName = songName.trim();
+    if (!fullSongList.includes(trimmedName)) {
+      setCustomSongs(prev => [...prev, trimmedName]);
     }
   };
 
@@ -103,11 +108,12 @@ const App: React.FC = () => {
 
     sortedHistory.forEach(record => {
       record.songs.forEach(song => {
-        if (!stats[song]) {
-          stats[song] = { song, count: 0, lastDate: null, history: [] };
+        const trimmedSong = song.trim();
+        if (!stats[trimmedSong]) {
+          stats[trimmedSong] = { song: trimmedSong, count: 0, lastDate: null, history: [] };
         }
-        stats[song].count += 1;
-        stats[song].history.push(record.date);
+        stats[trimmedSong].count += 1;
+        stats[trimmedSong].history.push(record.date);
       });
     });
 
@@ -169,7 +175,6 @@ const App: React.FC = () => {
                 songStats={songStats}
                 fullSongList={fullSongList}
                 onRegisterNewSong={registerNewSong}
-                // Passando o estado do rascunho e suas funções
                 draft={draft}
                 setDraft={setDraft}
               />
