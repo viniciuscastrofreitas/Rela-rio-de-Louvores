@@ -29,40 +29,6 @@ const BackupRestore: React.FC<Props> = ({ history, customSongs, onRestore }) => 
     URL.revokeObjectURL(url);
   };
 
-  const handleShareBackup = async () => {
-    if (history.length === 0 && customSongs.length === 0) {
-      alert("Não há dados para compartilhar.");
-      return;
-    }
-
-    const dataStr = generateBackupData();
-    const fileName = `backup_icm_${new Date().toISOString().split('T')[0]}.json`;
-
-    if (navigator.share) {
-      try {
-        const file = new File([dataStr], fileName, { type: 'application/json' });
-        
-        // Verifica se o navegador suporta o compartilhamento deste arquivo específico
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: 'Backup ICM Santo Antônio II',
-            text: 'Arquivo de backup do sistema de gestão de louvores.'
-          });
-        } else {
-          alert("O compartilhamento de arquivos não é suportado neste navegador. Use a opção 'Baixar Arquivo'.");
-        }
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          console.error('Erro ao compartilhar:', err);
-          alert("Não foi possível compartilhar o arquivo. Tente baixar o arquivo manualmente.");
-        }
-      }
-    } else {
-      alert("Seu navegador não suporta o compartilhamento nativo. Use a opção de download para salvar o arquivo.");
-    }
-  };
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -94,33 +60,23 @@ const BackupRestore: React.FC<Props> = ({ history, customSongs, onRestore }) => 
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Botão de Compartilhar (WhatsApp/Nativo) */}
-        <button 
-          onClick={handleShareBackup} 
-          className="flex flex-col items-center justify-center p-6 bg-indigo-600 rounded-2xl hover:bg-indigo-700 transition group shadow-lg shadow-indigo-100"
-        >
-          <span className="material-icons text-4xl text-white mb-2 group-hover:scale-110 transition">share</span>
-          <span className="font-bold text-white text-sm">Enviar Backup</span>
-          <span className="text-[10px] text-indigo-200 mt-1 uppercase font-black">WhatsApp / Email</span>
-        </button>
-
         {/* Botão de Download */}
         <button 
           onClick={handleBackup} 
-          className="flex flex-col items-center justify-center p-6 border-2 border-indigo-100 rounded-2xl hover:bg-indigo-50 transition group"
+          className="flex flex-col items-center justify-center p-8 border-2 border-indigo-100 rounded-2xl hover:bg-indigo-50 transition group shadow-sm"
         >
-          <span className="material-icons text-4xl text-indigo-600 mb-2 group-hover:scale-110 transition">file_download</span>
-          <span className="font-bold text-indigo-800 text-sm">Baixar Arquivo</span>
-          <span className="text-[10px] text-slate-400 mt-1 uppercase font-black">Salvar na Memória</span>
+          <span className="material-icons text-5xl text-indigo-600 mb-3 group-hover:scale-110 transition">file_download</span>
+          <span className="font-bold text-indigo-800 text-base">Baixar Arquivo</span>
+          <span className="text-[10px] text-slate-400 mt-1 uppercase font-black">Salvar Backup na Memória</span>
         </button>
 
         {/* Botão de Restaurar */}
         <button 
           onClick={() => fileInputRef.current?.click()} 
-          className="flex flex-col items-center justify-center p-6 border-2 border-emerald-100 rounded-2xl hover:bg-emerald-50 transition group md:col-span-2"
+          className="flex flex-col items-center justify-center p-8 border-2 border-emerald-100 rounded-2xl hover:bg-emerald-50 transition group shadow-sm"
         >
-          <span className="material-icons text-4xl text-emerald-600 mb-2 group-hover:scale-110 transition">upload_file</span>
-          <span className="font-bold text-emerald-800 text-sm">Restaurar Dados</span>
+          <span className="material-icons text-5xl text-emerald-600 mb-3 group-hover:scale-110 transition">upload_file</span>
+          <span className="font-bold text-emerald-800 text-base">Restaurar Dados</span>
           <span className="text-[10px] text-slate-400 mt-1 uppercase font-black">Abrir arquivo .json</span>
         </button>
         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" />
