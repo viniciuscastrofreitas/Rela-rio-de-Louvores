@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { ServiceRecord } from '../types';
 
@@ -11,12 +10,16 @@ interface Props {
 const BackupRestore: React.FC<Props> = ({ history, customSongs, onRestore }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const generateBackupData = () => {
+    return JSON.stringify({ history, customSongs }, null, 2);
+  };
+
   const handleBackup = () => {
     if (history.length === 0 && customSongs.length === 0) {
       alert("Não há dados para exportar.");
       return;
     }
-    const dataStr = JSON.stringify({ history, customSongs }, null, 2);
+    const dataStr = generateBackupData();
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -24,6 +27,40 @@ const BackupRestore: React.FC<Props> = ({ history, customSongs, onRestore }) => 
     link.download = `backup_igreja_${new Date().toISOString().split('T')[0]}.json`;
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleShareBackup = async () => {
+    if (history.length === 0 && customSongs.length === 0) {
+      alert("Não há dados para compartilhar.");
+      return;
+    }
+
+    const dataStr = generateBackupData();
+    const fileName = `backup_icm_${new Date().toISOString().split('T')[0]}.json`;
+
+    if (navigator.share) {
+      try {
+        const file = new File([dataStr], fileName, { type: 'application/json' });
+        
+        // Verifica se o navegador suporta o compartilhamento deste arquivo específico
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'Backup ICM Santo Antônio II',
+            text: 'Arquivo de backup do sistema de gestão de louvores.'
+          });
+        } else {
+          alert("O compartilhamento de arquivos não é suportado neste navegador. Use a opção 'Baixar Arquivo'.");
+        }
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          console.error('Erro ao compartilhar:', err);
+          alert("Não foi possível compartilhar o arquivo. Tente baixar o arquivo manualmente.");
+        }
+      }
+    } else {
+      alert("Seu navegador não suporta o compartilhamento nativo. Use a opção de download para salvar o arquivo.");
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,42 +87,60 @@ const BackupRestore: React.FC<Props> = ({ history, customSongs, onRestore }) => 
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-6 animate-fadeIn">
-      <h2 className="text-2xl font-bold text-gray-800 mb-8 flex items-center gap-2">
+    <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-8 animate-fadeIn border border-slate-100">
+      <h2 className="text-2xl font-black text-slate-800 mb-8 flex items-center gap-3">
         <span className="material-icons text-indigo-600">settings</span>
         Opções e Segurança
       </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <button onClick={handleBackup} className="flex flex-col items-center justify-center p-6 border-2 border-indigo-100 rounded-2xl hover:bg-indigo-50 transition group">
-          <span className="material-icons text-4xl text-indigo-600 mb-2 group-hover:scale-110 transition">download</span>
-          <span className="font-bold text-indigo-800 text-sm">Fazer Backup</span>
-          <span className="text-[10px] text-gray-400 mt-1 uppercase font-black">Salvar no Celular</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Botão de Compartilhar (WhatsApp/Nativo) */}
+        <button 
+          onClick={handleShareBackup} 
+          className="flex flex-col items-center justify-center p-6 bg-indigo-600 rounded-2xl hover:bg-indigo-700 transition group shadow-lg shadow-indigo-100"
+        >
+          <span className="material-icons text-4xl text-white mb-2 group-hover:scale-110 transition">share</span>
+          <span className="font-bold text-white text-sm">Enviar Backup</span>
+          <span className="text-[10px] text-indigo-200 mt-1 uppercase font-black">WhatsApp / Email</span>
         </button>
 
-        <button onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center justify-center p-6 border-2 border-green-100 rounded-2xl hover:bg-green-50 transition group">
-          <span className="material-icons text-4xl text-green-600 mb-2 group-hover:scale-110 transition">upload</span>
-          <span className="font-bold text-green-800 text-sm">Restaurar Dados</span>
-          <span className="text-[10px] text-gray-400 mt-1 uppercase font-black">Abrir Arquivo</span>
+        {/* Botão de Download */}
+        <button 
+          onClick={handleBackup} 
+          className="flex flex-col items-center justify-center p-6 border-2 border-indigo-100 rounded-2xl hover:bg-indigo-50 transition group"
+        >
+          <span className="material-icons text-4xl text-indigo-600 mb-2 group-hover:scale-110 transition">file_download</span>
+          <span className="font-bold text-indigo-800 text-sm">Baixar Arquivo</span>
+          <span className="text-[10px] text-slate-400 mt-1 uppercase font-black">Salvar na Memória</span>
+        </button>
+
+        {/* Botão de Restaurar */}
+        <button 
+          onClick={() => fileInputRef.current?.click()} 
+          className="flex flex-col items-center justify-center p-6 border-2 border-emerald-100 rounded-2xl hover:bg-emerald-50 transition group md:col-span-2"
+        >
+          <span className="material-icons text-4xl text-emerald-600 mb-2 group-hover:scale-110 transition">upload_file</span>
+          <span className="font-bold text-emerald-800 text-sm">Restaurar Dados</span>
+          <span className="text-[10px] text-slate-400 mt-1 uppercase font-black">Abrir arquivo .json</span>
         </button>
         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" />
       </div>
 
-      <div className="mt-8 bg-gray-50 p-6 rounded-2xl border border-gray-100">
-        <h4 className="text-xs font-black text-gray-400 uppercase mb-4 tracking-widest">Estado do Sistema</h4>
+      <div className="mt-10 bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
+        <h4 className="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest px-1">Estado do Sistema</h4>
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-600">Cultos no Histórico</span>
-            <span className="bg-white px-3 py-1 rounded-full text-indigo-600 font-black text-xs border border-indigo-100">{history.length}</span>
+          <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-50">
+            <span className="text-sm font-bold text-slate-600">Relatórios Salvos</span>
+            <span className="bg-indigo-50 px-4 py-1 rounded-full text-indigo-600 font-black text-xs border border-indigo-100">{history.length}</span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-600">Hinos Personalizados</span>
-            <span className="bg-white px-3 py-1 rounded-full text-indigo-600 font-black text-xs border border-indigo-100">{customSongs.length}</span>
+          <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-50">
+            <span className="text-sm font-bold text-slate-600">Hinos Customizados</span>
+            <span className="bg-indigo-50 px-4 py-1 rounded-full text-indigo-600 font-black text-xs border border-indigo-100">{customSongs.length}</span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-600">Armazenamento</span>
-            <span className="flex items-center gap-1 text-green-600 font-black text-xs uppercase">
-              <span className="material-icons text-xs">verified_user</span> Local Ativo
+          <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-50">
+            <span className="text-sm font-bold text-slate-600">Sincronização</span>
+            <span className="flex items-center gap-1.5 text-emerald-600 font-black text-[10px] uppercase">
+              <span className="material-icons text-sm">verified</span> Local Ativo
             </span>
           </div>
         </div>
