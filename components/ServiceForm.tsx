@@ -1,14 +1,15 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ServiceRecord, SongStats, ServiceDraft } from '../types';
 
 interface Props {
-  onSave: (record: ServiceRecord) => void;
+  onSave: (record: Omit<ServiceRecord, 'id'>) => void;
   songStats: Record<string, SongStats>;
   fullSongList: string[];
   onRegisterNewSong: (song: string) => void;
   draft: ServiceDraft;
   setDraft: React.Dispatch<React.SetStateAction<ServiceDraft>>;
+  editingId: string | null;
+  onCancelEdit: () => void;
 }
 
 const ServiceForm: React.FC<Props> = ({ 
@@ -17,13 +18,16 @@ const ServiceForm: React.FC<Props> = ({
   fullSongList, 
   onRegisterNewSong,
   draft,
-  setDraft
+  setDraft,
+  editingId,
+  onCancelEdit
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [infoModalData, setInfoModalData] = useState<{ song: string; type: 'history' | 'count' } | null>(null);
   const [pendingSong, setPendingSong] = useState<{name: string, diff: number, lastDate: string} | null>(null);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionRef = useRef<HTMLDivElement>(null);
@@ -124,7 +128,6 @@ const ServiceForm: React.FC<Props> = ({
 
   const handleFinalSave = () => {
     onSave({ 
-      id: crypto.randomUUID(), 
       date: draft.date, 
       description: draft.description, 
       songs: draft.songs 
@@ -132,10 +135,38 @@ const ServiceForm: React.FC<Props> = ({
     setShowSaveConfirm(false);
   };
 
+  // Funções de Drag and Drop
+  const handleDragStart = (index: number) => {
+    setDraggedItemIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedItemIndex === null || draggedItemIndex === index) return;
+
+    const songs = [...draft.songs];
+    const draggedItem = songs[draggedItemIndex];
+    songs.splice(draggedItemIndex, 1);
+    songs.splice(index, 0, draggedItem);
+    
+    setDraggedItemIndex(index);
+    setDraft(prev => ({ ...prev, songs }));
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItemIndex(null);
+  };
+
   return (
-    <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 p-6 md:p-10 animate-fadeIn border border-slate-100">
+    <div className={`bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 p-6 md:p-10 animate-fadeIn border ${editingId ? 'border-amber-400 border-2' : 'border-slate-100'}`}>
       <div className="flex flex-col gap-8">
         
+        {editingId && (
+          <div className="bg-amber-100 text-amber-900 p-3 rounded-2xl flex items-center justify-center gap-2 font-black uppercase text-[10px] tracking-widest animate-pulse">
+            <span className="material-icons text-sm">edit</span> Editando Registro
+          </div>
+        )}
+
         {/* Sessão de Dados do Culto */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/80 p-6 rounded-[2rem] border border-slate-100">
           <div>
@@ -226,35 +257,46 @@ const ServiceForm: React.FC<Props> = ({
               <p className="font-bold text-sm tracking-tight">Lista vazia. Adicione os louvores acima.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar p-1">
               {draft.songs.map((song, index) => (
-                <div key={index} className="song-card flex flex-col bg-white p-5 rounded-[1.5rem] border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-50 transition-all animate-fadeIn group">
-                  <div className="flex items-start gap-4 w-full mb-4">
-                    <div className="w-8 h-8 shrink-0 rounded-full bg-slate-50 flex items-center justify-center text-[10px] font-black text-indigo-400 border border-slate-100 group-hover:bg-indigo-600 group-hover:text-white transition-all mt-0.5">
+                <div 
+                  key={`${song}-${index}`} 
+                  draggable
+                  onDragStart={() => handleDragStart(index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragEnd={handleDragEnd}
+                  onDrop={handleDragEnd}
+                  className={`song-card flex flex-col bg-white p-4 rounded-[1.5rem] border transition-shadow cursor-move group ${draggedItemIndex === index ? 'opacity-40 scale-[0.98] border-indigo-400 shadow-inner' : 'border-slate-100 hover:border-indigo-200 hover:shadow-lg shadow-indigo-50'}`}
+                >
+                  <div className="flex items-start gap-3 w-full mb-3">
+                    <div className="shrink-0 pt-1 text-slate-300 group-hover:text-indigo-400 transition-colors">
+                      <span className="material-icons text-xl">reorder</span>
+                    </div>
+                    <div className="w-7 h-7 shrink-0 rounded-lg bg-slate-50 flex items-center justify-center text-[10px] font-black text-indigo-400 border border-slate-100 group-hover:bg-indigo-600 group-hover:text-white transition-all mt-0.5">
                       {String(index + 1).padStart(2, '0')}
                     </div>
                     <span className="font-extrabold text-slate-700 text-sm flex-1 leading-snug pt-1">{song}</span>
                   </div>
                   
-                  {/* Container de Ações Centralizado */}
+                  {/* Container de Ações Sutil */}
                   <div className="grid grid-cols-3 gap-1 border-t border-slate-50 pt-3">
                     <button 
-                      onClick={() => setInfoModalData({ song, type: 'history' })} 
-                      className="flex flex-col items-center justify-center gap-1 py-1 text-slate-400 hover:text-indigo-600 transition-all group/btn"
+                      onMouseDown={(e) => { e.stopPropagation(); setInfoModalData({ song, type: 'history' }); }} 
+                      className="flex flex-col items-center justify-center gap-1 py-1 text-slate-400 hover:text-indigo-600 transition-all"
                     >
                       <span className="material-icons text-lg">event_available</span>
                       <span className="text-[8px] font-black uppercase tracking-tighter">Histórico</span>
                     </button>
                     <button 
-                      onClick={() => setInfoModalData({ song, type: 'count' })} 
-                      className="flex flex-col items-center justify-center gap-1 py-1 text-slate-400 hover:text-emerald-600 transition-all group/btn"
+                      onMouseDown={(e) => { e.stopPropagation(); setInfoModalData({ song, type: 'count' }); }} 
+                      className="flex flex-col items-center justify-center gap-1 py-1 text-slate-400 hover:text-emerald-600 transition-all"
                     >
                       <span className="material-icons text-lg">bar_chart</span>
                       <span className="text-[8px] font-black uppercase tracking-tighter">Frequência</span>
                     </button>
                     <button 
-                      onClick={() => setDraft(prev => ({ ...prev, songs: prev.songs.filter((_, i) => i !== index) }))} 
-                      className="flex flex-col items-center justify-center gap-1 py-1 text-slate-300 hover:text-rose-600 transition-all group/btn"
+                      onMouseDown={(e) => { e.stopPropagation(); setDraft(prev => ({ ...prev, songs: prev.songs.filter((_, i) => i !== index) })); }} 
+                      className="flex flex-col items-center justify-center gap-1 py-1 text-slate-300 hover:text-rose-600 transition-all"
                     >
                       <span className="material-icons text-lg">delete_outline</span>
                       <span className="text-[8px] font-black uppercase tracking-tighter">Remover</span>
@@ -266,25 +308,36 @@ const ServiceForm: React.FC<Props> = ({
           )}
         </div>
 
-        <button
-          onClick={() => setShowSaveConfirm(true)}
-          disabled={draft.songs.length === 0}
-          className={`w-full py-6 rounded-[2rem] font-black text-lg tracking-widest shadow-2xl transition-all transform active:scale-[0.97] flex items-center justify-center gap-4 ${draft.songs.length > 0 ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}`}
-        >
-          <span className="material-icons text-2xl">save</span>
-          SALVAR RELATÓRIO DO CULTO
-        </button>
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={() => setShowSaveConfirm(true)}
+            disabled={draft.songs.length === 0}
+            className={`w-full py-6 rounded-[2rem] font-black text-lg tracking-widest shadow-2xl transition-all transform active:scale-[0.97] flex items-center justify-center gap-4 ${draft.songs.length > 0 ? (editingId ? 'bg-amber-500 hover:bg-amber-600' : 'bg-indigo-600 hover:bg-indigo-700') + ' text-white shadow-indigo-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}`}
+          >
+            <span className="material-icons text-2xl">{editingId ? 'update' : 'save'}</span>
+            {editingId ? 'ATUALIZAR REGISTRO' : 'SALVAR RELATÓRIO DO CULTO'}
+          </button>
+          
+          {editingId && (
+            <button 
+              onClick={onCancelEdit}
+              className="w-full py-3 text-slate-400 font-black uppercase text-[10px] tracking-widest"
+            >
+              Cancelar Edição
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Save Confirmation Modal */}
       {showSaveConfirm && (
         <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[200] p-6 backdrop-blur-sm">
-          <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-sm p-10 animate-scaleUp text-center">
-            <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <span className="material-icons text-4xl">playlist_add_check</span>
+          <div className="bg-white rounded-[3rem] shadow-2xl w-full max-sm p-10 animate-scaleUp text-center">
+            <div className={`w-20 h-20 ${editingId ? 'bg-amber-50 text-amber-600' : 'bg-indigo-50 text-indigo-600'} rounded-full flex items-center justify-center mx-auto mb-6`}>
+              <span className="material-icons text-4xl">{editingId ? 'published_with_changes' : 'playlist_add_check'}</span>
             </div>
-            <h3 className="text-2xl font-black text-slate-800 mb-2">Finalizar Registro?</h3>
-            <p className="text-slate-500 text-sm mb-6">Confirme a data para salvar este culto:</p>
+            <h3 className="text-2xl font-black text-slate-800 mb-2">{editingId ? 'Confirmar Alteração?' : 'Finalizar Registro?'}</h3>
+            <p className="text-slate-500 text-sm mb-6">Confirme a data para {editingId ? 'atualizar' : 'salvar'} este culto:</p>
             
             <div className="mb-8">
               <input 
@@ -296,8 +349,10 @@ const ServiceForm: React.FC<Props> = ({
             </div>
 
             <div className="flex flex-col gap-3">
-              <button onClick={handleFinalSave} className="w-full py-5 bg-indigo-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-100">CONFIRMAR E SALVAR</button>
-              <button onClick={() => setShowSaveConfirm(false)} className="w-full py-3 text-slate-400 font-bold">CANCELAR</button>
+              <button onClick={handleFinalSave} className={`w-full py-5 ${editingId ? 'bg-amber-500' : 'bg-indigo-600'} text-white font-black rounded-2xl shadow-xl shadow-indigo-100`}>
+                {editingId ? 'ATUALIZAR AGORA' : 'CONFIRMAR E SALVAR'}
+              </button>
+              <button onClick={() => setShowSaveConfirm(false)} className="w-full py-3 text-slate-400 font-bold">VOLTAR</button>
             </div>
           </div>
         </div>
@@ -333,7 +388,7 @@ const ServiceForm: React.FC<Props> = ({
           <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-md p-10 animate-scaleUp" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-start mb-8">
               <div className="space-y-1">
-                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] px-1 block">Detalhes do Louvor</span>
+                <span className="text-[10px] font-black text-indigo-50 uppercase tracking-[0.2em] px-1 block">Detalhes do Louvor</span>
                 <h3 className="text-xl font-extrabold text-slate-800 leading-tight pr-4">{infoModalData.song}</h3>
               </div>
               <button onClick={() => setInfoModalData(null)} className="bg-slate-100 text-slate-400 w-12 h-12 rounded-full flex items-center justify-center hover:bg-slate-200 transition-all"><span className="material-icons">close</span></button>

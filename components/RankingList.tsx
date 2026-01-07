@@ -8,7 +8,8 @@ interface Props {
 
 const RankingList: React.FC<Props> = ({ songStats }) => {
   const top10 = useMemo(() => {
-    return Object.values(songStats)
+    // Fix: Cast the result of Object.values to SongStats[] to resolve 'unknown' type errors on properties like 'count'
+    return (Object.values(songStats) as SongStats[])
       // Mostra apenas louvores que houveram repetição (cantados mais de uma vez)
       .filter(stat => stat.count > 1)
       .sort((a, b) => b.count - a.count)

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { INITIAL_PRAISE_LIST } from './constants';
 import { ServiceRecord, SongStats, ServiceDraft } from './types';
@@ -15,6 +14,7 @@ const App: React.FC = () => {
   const [customSongs, setCustomSongs] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Estado do Rascunho (Draft) elevado para o App
   const [draft, setDraft] = useState<ServiceDraft>({
@@ -61,7 +61,6 @@ const App: React.FC = () => {
   }, [history, customSongs, draft, isLoading]);
 
   const fullSongList = useMemo(() => {
-    // Aplicamos trim em tudo para evitar "Hino 1" e "Hino 1 " serem vistos como diferentes
     const cleanedInitial = INITIAL_PRAISE_LIST.map(s => s.trim());
     const cleanedCustom = customSongs.map(s => s.trim());
     
@@ -75,8 +74,20 @@ const App: React.FC = () => {
     });
   }, [customSongs]);
 
-  const addServiceRecord = (record: ServiceRecord) => {
-    setHistory(prev => [record, ...prev]);
+  const saveServiceRecord = (recordData: Omit<ServiceRecord, 'id'>) => {
+    if (editingId) {
+      // Atualizar registro existente
+      setHistory(prev => prev.map(r => r.id === editingId ? { ...recordData, id: editingId } : r));
+      setEditingId(null);
+    } else {
+      // Criar novo registro
+      const newRecord: ServiceRecord = {
+        ...recordData,
+        id: crypto.randomUUID()
+      };
+      setHistory(prev => [newRecord, ...prev]);
+    }
+    
     // Limpa o rascunho após salvar
     setDraft({
       date: new Date().toISOString().split('T')[0],
@@ -86,7 +97,28 @@ const App: React.FC = () => {
     setActiveTab('history');
   };
 
+  const handleStartEdit = (record: ServiceRecord) => {
+    setEditingId(record.id);
+    setDraft({
+      date: record.date,
+      description: record.description,
+      songs: record.songs
+    });
+    setActiveTab('new');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setDraft({
+      date: new Date().toISOString().split('T')[0],
+      description: 'Noite',
+      songs: []
+    });
+  };
+
   const deleteServiceRecord = (id: string) => {
+    if (editingId === id) setEditingId(null);
     setHistory(prev => prev.filter(r => r.id !== id));
   };
 
@@ -158,7 +190,9 @@ const App: React.FC = () => {
           </div>
           
           <nav className="hidden lg:flex bg-slate-100 p-1 rounded-2xl gap-1">
-            <button onClick={() => setActiveTab('new')} className={`px-5 py-2.5 rounded-xl text-sm font-bold tab-transition ${activeTab === 'new' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Novo Culto</button>
+            <button onClick={() => setActiveTab('new')} className={`px-5 py-2.5 rounded-xl text-sm font-bold tab-transition ${activeTab === 'new' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+              {editingId ? 'Editando' : 'Novo Culto'}
+            </button>
             <button onClick={() => setActiveTab('history')} className={`px-5 py-2.5 rounded-xl text-sm font-bold tab-transition ${activeTab === 'history' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Histórico</button>
             <button onClick={() => setActiveTab('unplayed')} className={`px-5 py-2.5 rounded-xl text-sm font-bold tab-transition ${activeTab === 'unplayed' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Não Cantados</button>
             <button onClick={() => setActiveTab('settings')} className={`px-5 py-2.5 rounded-xl text-sm font-bold tab-transition ${activeTab === 'settings' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Backup</button>
@@ -171,12 +205,14 @@ const App: React.FC = () => {
           {activeTab === 'new' && (
             <div className="max-w-4xl mx-auto space-y-8">
               <ServiceForm 
-                onSave={addServiceRecord} 
+                onSave={saveServiceRecord} 
                 songStats={songStats}
                 fullSongList={fullSongList}
                 onRegisterNewSong={registerNewSong}
                 draft={draft}
                 setDraft={setDraft}
+                editingId={editingId}
+                onCancelEdit={handleCancelEdit}
               />
               <div className="pt-4">
                 <RankingList songStats={songStats} />
@@ -189,7 +225,12 @@ const App: React.FC = () => {
               <HistoryList 
                 history={history} 
                 onDelete={deleteServiceRecord}
-                onClearAll={() => setHistory([])}
+                onEdit={handleStartEdit}
+                onClearAll={() => {
+                  if(confirm("Deseja realmente apagar todo o histórico?")) {
+                    setHistory([]);
+                  }
+                }}
               />
             </div>
           )}
@@ -215,8 +256,8 @@ const App: React.FC = () => {
 
       <nav className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] glass-effect border border-slate-200/50 flex justify-around p-3 z-[100] shadow-2xl rounded-3xl">
         <button onClick={() => setActiveTab('new')} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'new' ? 'text-indigo-600 scale-110' : 'text-slate-400'}`}>
-          <span className="material-icons">{activeTab === 'new' ? 'add_circle' : 'add_circle_outline'}</span>
-          <span className="text-[10px] font-black uppercase tracking-tighter">Novo</span>
+          <span className="material-icons">{editingId ? 'edit' : (activeTab === 'new' ? 'add_circle' : 'add_circle_outline')}</span>
+          <span className="text-[10px] font-black uppercase tracking-tighter">{editingId ? 'Editando' : 'Novo'}</span>
         </button>
         <button onClick={() => setActiveTab('history')} className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'history' ? 'text-indigo-600 scale-110' : 'text-slate-400'}`}>
           <span className="material-icons">history</span>
