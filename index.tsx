@@ -6,11 +6,11 @@ import App from './App';
 // Registrar Service Worker para suporte Offline robusto
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+    // Usando caminho relativo './sw.js' para melhor compatibilidade com subdiretórios e previews
+    navigator.serviceWorker.register('./sw.js')
       .then(reg => {
-        console.log('Service Worker ativo:', reg.scope);
+        console.log('Service Worker pronto:', reg.scope);
         
-        // Forçar controle imediato da página pelo SW
         if (reg.waiting) {
           reg.waiting.postMessage({ type: 'SKIP_WAITING' });
         }
@@ -20,14 +20,20 @@ if ('serviceWorker' in navigator) {
           if (installingWorker) {
             installingWorker.onstatechange = () => {
               if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // Notificar usuário sobre atualização (opcional)
-                console.log('App atualizado. Por favor, recarregue.');
+                console.log('Nova versão disponível. Recarregue para atualizar.');
               }
             };
           }
         };
       })
-      .catch(err => console.error('Erro ao registrar Service Worker:', err));
+      .catch(err => {
+        // Log amigável para erro de origem comum em ambientes de preview (iFrames)
+        if (err.message.includes('origin')) {
+          console.warn('Service Worker: Registro ignorado (ambiente de pré-visualização). Isso é normal durante o desenvolvimento.');
+        } else {
+          console.error('Erro ao registrar Service Worker:', err);
+        }
+      });
   });
 }
 
