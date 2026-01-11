@@ -16,9 +16,18 @@ const App: React.FC = () => {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  // Função auxiliar para obter a data local no formato YYYY-MM-DD
+  const getTodayDate = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Estado do Rascunho (Draft) elevado para o App
   const [draft, setDraft] = useState<ServiceDraft>({
-    date: new Date().toISOString().split('T')[0],
+    date: getTodayDate(),
     description: 'Noite',
     songs: []
   });
@@ -37,7 +46,13 @@ const App: React.FC = () => {
         if (data) {
           if (data.history) setHistory(data.history);
           if (data.customSongs) setCustomSongs(data.customSongs);
-          if (data.draft) setDraft(data.draft);
+          if (data.draft) {
+            // Ao abrir o app, mantemos os louvores do rascunho, mas atualizamos para a data de hoje
+            setDraft({
+              ...data.draft,
+              date: getTodayDate()
+            });
+          }
         }
       } catch (e) {
         console.error("Erro ao carregar banco de dados local", e);
@@ -88,9 +103,9 @@ const App: React.FC = () => {
       setHistory(prev => [newRecord, ...prev]);
     }
     
-    // Limpa o rascunho após salvar
+    // Limpa o rascunho após salvar, voltando para a data do dia
     setDraft({
-      date: new Date().toISOString().split('T')[0],
+      date: getTodayDate(),
       description: 'Noite',
       songs: []
     });
@@ -111,7 +126,7 @@ const App: React.FC = () => {
   const handleCancelEdit = () => {
     setEditingId(null);
     setDraft({
-      date: new Date().toISOString().split('T')[0],
+      date: getTodayDate(),
       description: 'Noite',
       songs: []
     });
